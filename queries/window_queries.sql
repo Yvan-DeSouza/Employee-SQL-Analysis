@@ -170,14 +170,15 @@ FROM (
 ---------------------------------------------
 -- CUME_DIST: Get employees in the top 25% of earners
 ---------------------------------------------
-SELECT job_title, salary, (cume_dist_percentage || '%') AS cume_dist_percentage
+SELECT job_title, salary, (cume_dist_per || '%') AS cume_dist_percentage
 FROM (
     SELECT
         *,
-        ROUND(CUME_DIST() OVER (ORDER BY salary DESC) * 100, 2) AS cume_dist_percentage
+        ROUND(CUME_DIST() OVER (ORDER BY salary DESC)::numeric * 100, 2) AS cume_dist_per
     FROM employee
 ) perc
-WHERE perc.cume_dist_percentage < 25;
+WHERE perc.cume_dist_per < 25;
+
 
 
 ---------------------------------------------
@@ -192,7 +193,16 @@ SELECT
 FROM (
     SELECT
         *,
-        ROUND(PERCENT_RANK() OVER (ORDER BY salary DESC) * 100, 2) AS perc_rank
+        ROUND(PERCENT_RANK() OVER (ORDER BY salary DESC)::numeric * 100, 2) AS perc_rank
     FROM employee
 ) perc_salary
 WHERE emp_name = 'Bruno King';
+
+SELECT *
+FROM employee;
+
+SELECT hire_date,
+ROW_NUMBER() OVER(PARTITION BY dept_name ORDER BY hire_date)
+AS order_hire
+FROM employee
+
