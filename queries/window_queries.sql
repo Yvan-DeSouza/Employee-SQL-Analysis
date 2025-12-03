@@ -198,11 +198,43 @@ FROM (
 ) perc_salary
 WHERE emp_name = 'Bruno King';
 
-SELECT *
+
+-- Ordering employees by hire date
+SELECT hire_date, emp_name,
+ROW_NUMBER() OVER(PARTITION BY dept_name ORDER BY hire_date) AS order_hire
 FROM employee;
 
-SELECT hire_date,
-ROW_NUMBER() OVER(PARTITION BY dept_name ORDER BY hire_date)
-AS order_hire
-FROM employee
+--Seeing if the prevent employee earned more or less than the previous one
+Select salary, dept_name, performance_score,
+LAG(salary) OVER(ORDER BY emp_id) AS prev_emp_salary,
+(salary - LAG(salary) OVER(ORDER BY emp_id)) AS difference
+FROM employee;
 
+--Seeing who was the lastest and earliest employee hired in each department
+
+SELECT dept_name, emp_name, salary,
+FIRST_VALUE(hire_date) over (partition by dept_name ORDER BY hire_date DESC),
+LAST_VALUE(hire_date) over (partition by dept_name ORDER BY hire_date DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+FROM employee;
+
+--Finding the employee with the 4th lowest performance score
+SELECT salary, emp_name, dept_name,
+NTH_VALUE(performance_score, 4) OVER(partition by dept_name ORDER BY performance_score) AS performance_score_rank
+FROM employee;
+
+
+--Finding the percentile of each employee in sales with their bonus
+SELECT
+	bonus, emp_name, performance_score, dept_name,
+	CASE 
+		WHEN buckets = 1 THEN 'High performer'
+		WHEN buckets = 2 THEN 'Average performer'
+		WHEN buckets = 3 THEN 'High performer'
+	END AS bonus_range
+FROM(
+SELECT
+	bonus, emp_name, performance_score, dept_name,
+	NTILE(3) over(ORDER BY bonus) AS buckets
+FROM employee
+WHERE dept_name = 'Sales'
+) bonus_type;
